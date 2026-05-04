@@ -1,0 +1,31 @@
+tables:
+  customers:
+    description: One row per customer account. Represents a company that signed up for the product.
+    columns:
+      customer_id: Unique identifier for the customer.
+      plan: Subscription tier. One of starter, growth, or enterprise.
+      signup_date: The date the customer first created their account.
+
+  subscriptions:
+    description: One row per subscription. Tracks MRR, plan, and churn status per customer.
+    columns:
+      mrr: Monthly Recurring Revenue for this subscription in USD. Does not include refunds.
+      status: Either 'active' (paying) or 'churned' (cancelled).
+      end_date: The date the subscription was cancelled. NULL if still active.
+
+  invoices:
+    description: One row per billing event. Includes both payments and refunds.
+    columns:
+      amt: The billed amount in USD. Negative values indicate refunds. Positive values are payments.
+      type: Either 'payment' or 'refund'.
+
+  events:
+    description: One row per product usage event. Tracks what customers do inside the product.
+    columns:
+      event_type: The action taken. One of login, created_record, shared_view, invited_user, exported_data.
+
+metrics:
+  MRR: Sum of mrr from subscriptions WHERE status = 'active'. Never use invoices.amt for MRR.
+  Net Revenue: Sum of amt from invoices WHERE type = 'payment', minus sum of amt WHERE type = 'refund'.
+  Churn Rate: Count of customers WHERE status = 'churned' divided by total customers, as a percentage.
+  Active Customers: Count of distinct customer_id WHERE subscription status = 'active'.

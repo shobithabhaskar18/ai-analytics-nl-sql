@@ -8,10 +8,16 @@ from datetime import datetime
 from dotenv import load_dotenv
 from context_layer import build_prompt
 
-# Works both locally (.env) and on Streamlit Cloud (secrets)
-api_key = os.environ.get("ANTHROPIC_API_KEY") or st.secrets.get("ANTHROPIC_API_KEY")
-client = anthropic.Anthropic(api_key=api_key)
 load_dotenv()
+
+api_key = os.environ.get("ANTHROPIC_API_KEY")
+if not api_key:
+    try:
+        api_key = st.secrets["ANTHROPIC_API_KEY"]
+    except:
+        pass
+
+client = anthropic.Anthropic(api_key=api_key)
 
 LOG_FILE = 'data/query_log.jsonl'
 

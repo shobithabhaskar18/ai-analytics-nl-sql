@@ -43,6 +43,7 @@ Rules:
 - Return ONLY the SQL query, no explanation, no markdown, no backticks.
 - Use exact table and column names from the schema above.
 - Apply metric definitions exactly as specified.
+- - Always qualify column names with their table alias when joining tables (e.g. s.plan not just plan).
 """
     else:
         system_prompt = """You are an expert SQL analyst.

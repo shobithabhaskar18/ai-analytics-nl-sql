@@ -1,0 +1,59 @@
+id,category,question,use_context,status,reason,sql
+AGG_01,aggregation,How many active customers do we have?,True,pass,✅ exact match: 153.0,SELECT COUNT(DISTINCT customer_id) FROM subscriptions WHERE status = 'active'
+AGG_02,aggregation,How many invoices were refunds?,True,pass,✅ exact match: 81.0,SELECT COUNT(*) FROM invoices WHERE type = 'refund'
+AGG_03,aggregation,What is the total number of customers?,True,pass,✅ exact match: 200.0,SELECT COUNT(*) FROM customers
+AGG_04,aggregation,How many churned customers do we have?,True,pass,✅ exact match: 47.0,SELECT COUNT(DISTINCT customer_id) FROM subscriptions WHERE status = 'churned'
+AGG_05,aggregation,How many total product events are in the database?,True,pass,✅ exact match: 8035.0,SELECT COUNT(*) FROM events
+REV_01,revenue,What is the total net revenue excluding refunds?,True,pass,✅ exact match: 586098.0,"SELECT SUM(amt) AS total_net_revenue
+FROM invoices
+WHERE type = 'payment'"
+REV_02,revenue,What is the total MRR across all active subscriptions?,True,pass,✅ exact match: 54147.0,"SELECT SUM(mrr) as total_mrr
+FROM subscriptions
+WHERE status = 'active'"
+REV_03,revenue,What is the MRR for enterprise plan customers only?,True,pass,✅ exact match: 42347.0,"SELECT SUM(mrr) 
+FROM subscriptions 
+JOIN customers ON subscriptions.customer_id = customers.customer_id 
+WHERE subscriptions.status = 'active' 
+AND customers.plan = 'enterprise'"
+REV_04,revenue,What is the total amount lost to refunds?,True,pass,✅ returned 1 rows (non-empty check),"SELECT SUM(amt) * -1 AS total_refunds
+FROM invoices
+WHERE type = 'refund'"
+REV_05,revenue,How many payment invoices exist?,True,pass,✅ exact match: 1752.0,SELECT COUNT(*) FROM invoices WHERE type = 'payment'
+FIL_01,filtering,How many customers are on the starter plan?,True,pass,✅ returned 1 rows (non-empty check),SELECT COUNT(*) FROM customers WHERE plan = 'starter'
+FIL_02,filtering,How many customers work in the fintech industry?,True,pass,✅ returned 1 rows (non-empty check),SELECT COUNT(*) FROM customers WHERE industry = 'fintech'
+FIL_03,filtering,List all churned customers and their plan type.,True,pass,✅ correct row count: 47,"SELECT c.customer_id, c.plan
+FROM customers c
+JOIN subscriptions s ON c.customer_id = s.customer_id
+WHERE s.status = 'churned'"
+FIL_04,filtering,Which customers have more than 500 employees?,True,pass,✅ returned 42 rows (non-empty check),"SELECT customer_id, employee_count
+FROM customers
+WHERE employee_count > 500"
+FIL_05,filtering,How many active enterprise customers do we have?,True,pass,✅ returned 1 rows (non-empty check),"SELECT COUNT(DISTINCT c.customer_id)
+FROM customers c
+JOIN subscriptions s ON c.customer_id = s.customer_id
+WHERE c.plan = 'enterprise' AND s.status = 'active'"
+JOI_01,joins,What is the MRR broken down by plan?,True,pass,✅ correct row count: 3,"SELECT c.plan, SUM(s.mrr) as total_mrr
+FROM customers c
+JOIN subscriptions s ON c.customer_id = s.customer_id
+WHERE s.status = 'active'
+GROUP BY c.plan"
+JOI_02,joins,Which industry has the most customers?,True,pass,✅ correct row count: 1,"SELECT industry, COUNT(*) as customer_count
+FROM customers
+GROUP BY industry
+ORDER BY customer_count DESC
+LIMIT 1"
+JOI_03,joins,How many events has each customer triggered on average?,True,pass,✅ returned 1 rows (non-empty check),"SELECT AVG(event_count) as avg_events_per_customer
+FROM (
+  SELECT customer_id, COUNT(*) as event_count
+  FROM events
+  GROUP BY customer_id
+)"
+JOI_04,joins,What is the total revenue generated per plan type?,True,pass,✅ correct row count: 3,"SELECT c.plan, SUM(i.amt) as total_revenue
+FROM customers c
+JOIN invoices i ON c.customer_id = i.customer_id
+WHERE i.type = 'payment'
+GROUP BY c.plan"
+JOI_05,joins,How many customers have never triggered any product event?,True,pass,✅ returned 1 rows (non-empty check),"SELECT COUNT(DISTINCT c.customer_id)
+FROM customers c
+LEFT JOIN events e ON c.customer_id = e.customer_id
+WHERE e.customer_id IS NULL"

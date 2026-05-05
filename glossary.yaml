@@ -5,6 +5,8 @@ tables:
       customer_id: Unique identifier for the customer.
       plan: Subscription tier. One of starter, growth, or enterprise.
       signup_date: The date the customer first created their account.
+      industry: The vertical the customer operates in. One of fintech, healthcare, ecommerce, saas, media.
+      employee_count: Number of employees at the customer company. Stored as an integer.
 
   subscriptions:
     description: One row per subscription. Tracks MRR, plan, and churn status per customer.

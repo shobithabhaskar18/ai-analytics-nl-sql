@@ -1,0 +1,85 @@
+id,category,question,use_context,status,reason,sql
+AGG_01,aggregation,How many active customers do we have?,False,pass,✅ exact match: 153.0,SELECT COUNT(DISTINCT customer_id) FROM subscriptions WHERE status = 'active'
+AGG_02,aggregation,How many invoices were refunds?,False,fail,SQL error: Execution failed on sql 'SELECT COUNT(*) FROM invoices WHERE amount < 0': no such column: amount,SELECT COUNT(*) FROM invoices WHERE amount < 0
+AGG_03,aggregation,What is the total number of customers?,False,pass,✅ exact match: 200.0,SELECT COUNT(*) FROM customers
+AGG_04,aggregation,How many churned customers do we have?,False,pass,✅ exact match: 47.0,"SELECT COUNT(DISTINCT customer_id) 
+FROM subscriptions 
+WHERE status = 'churned'"
+AGG_05,aggregation,How many total product events are in the database?,False,fail,SQL error: Execution failed on sql 'SELECT COUNT(*) FROM events WHERE type = 'product'': no such column: type,SELECT COUNT(*) FROM events WHERE type = 'product'
+REV_01,revenue,What is the total net revenue excluding refunds?,False,fail,"SQL error: Execution failed on sql 'SELECT SUM(amount_paid) as total_net_revenue
+FROM invoices
+WHERE status != 'refunded' OR status IS NULL': no such column: amount_paid","SELECT SUM(amount_paid) as total_net_revenue
+FROM invoices
+WHERE status != 'refunded' OR status IS NULL"
+REV_02,revenue,What is the total MRR across all active subscriptions?,False,pass,✅ exact match: 54147.0,"SELECT SUM(mrr) as total_mrr
+FROM subscriptions
+WHERE status = 'active'"
+REV_03,revenue,What is the MRR for enterprise plan customers only?,False,fail,"SQL error: Execution failed on sql 'SELECT SUM(amount) / 100.0 as MRR
+FROM subscriptions s
+JOIN invoices i ON s.id = i.subscription_id
+WHERE s.plan = 'enterprise'
+AND s.status = 'active'
+AND i.status = 'paid'
+AND i.billing_reason = 'subscription_cycle'': no such column: amount","SELECT SUM(amount) / 100.0 as MRR
+FROM subscriptions s
+JOIN invoices i ON s.id = i.subscription_id
+WHERE s.plan = 'enterprise'
+AND s.status = 'active'
+AND i.status = 'paid'
+AND i.billing_reason = 'subscription_cycle'"
+REV_04,revenue,What is the total amount lost to refunds?,False,fail,SQL error: Execution failed on sql 'SELECT SUM(amount_refunded) FROM invoices WHERE amount_refunded > 0': no such column: amount_refunded,SELECT SUM(amount_refunded) FROM invoices WHERE amount_refunded > 0
+REV_05,revenue,How many payment invoices exist?,False,fail,"Expected 1752.0, got 1833.0",SELECT COUNT(*) FROM invoices WHERE status = 'paid'
+FIL_01,filtering,How many customers are on the starter plan?,False,fail,SQL error: Execution failed on sql 'SELECT COUNT(DISTINCT customer_id) FROM subscriptions WHERE plan_name = 'starter' AND status = 'active'': no such column: plan_name,SELECT COUNT(DISTINCT customer_id) FROM subscriptions WHERE plan_name = 'starter' AND status = 'active'
+FIL_02,filtering,How many customers work in the fintech industry?,False,pass,✅ returned 1 rows (non-empty check),SELECT COUNT(*) FROM customers WHERE industry = 'fintech'
+FIL_03,filtering,List all churned customers and their plan type.,False,fail,"SQL error: Execution failed on sql 'SELECT c.customer_id, c.name, s.plan_type
+FROM customers c
+JOIN subscriptions s ON c.customer_id = s.customer_id
+WHERE s.status = 'churned'': no such column: c.name","SELECT c.customer_id, c.name, s.plan_type
+FROM customers c
+JOIN subscriptions s ON c.customer_id = s.customer_id
+WHERE s.status = 'churned'"
+FIL_04,filtering,Which customers have more than 500 employees?,False,fail,SQL error: Execution failed on sql 'SELECT * FROM customers WHERE employees > 500': no such column: employees,SELECT * FROM customers WHERE employees > 500
+FIL_05,filtering,How many active enterprise customers do we have?,False,fail,"SQL error: Execution failed on sql 'SELECT COUNT(DISTINCT c.customer_id)
+FROM customers c
+JOIN subscriptions s ON c.customer_id = s.customer_id
+WHERE s.status = 'active' 
+AND s.plan_type = 'enterprise'': no such column: s.plan_type","SELECT COUNT(DISTINCT c.customer_id)
+FROM customers c
+JOIN subscriptions s ON c.customer_id = s.customer_id
+WHERE s.status = 'active' 
+AND s.plan_type = 'enterprise'"
+JOI_01,joins,What is the MRR broken down by plan?,False,fail,"SQL error: Execution failed on sql 'SELECT 
+    s.plan_name,
+    SUM(s.mrr) as total_mrr
+FROM subscriptions s
+WHERE s.status = 'active'
+GROUP BY s.plan_name
+ORDER BY total_mrr DESC': no such column: s.plan_name","SELECT 
+    s.plan_name,
+    SUM(s.mrr) as total_mrr
+FROM subscriptions s
+WHERE s.status = 'active'
+GROUP BY s.plan_name
+ORDER BY total_mrr DESC"
+JOI_02,joins,Which industry has the most customers?,False,pass,✅ correct row count: 1,"SELECT industry, COUNT(*) as customer_count
+FROM customers
+GROUP BY industry
+ORDER BY customer_count DESC
+LIMIT 1"
+JOI_03,joins,How many events has each customer triggered on average?,False,pass,✅ returned 1 rows (non-empty check),"SELECT AVG(event_count) as average_events_per_customer
+FROM (
+    SELECT customer_id, COUNT(*) as event_count
+    FROM events
+    GROUP BY customer_id
+)"
+JOI_04,joins,What is the total revenue generated per plan type?,False,fail,"SQL error: Execution failed on sql 'SELECT s.plan_type, SUM(i.amount) as total_revenue
+FROM subscriptions s
+JOIN invoices i ON s.id = i.subscription_id
+GROUP BY s.plan_type': no such column: s.plan_type","SELECT s.plan_type, SUM(i.amount) as total_revenue
+FROM subscriptions s
+JOIN invoices i ON s.id = i.subscription_id
+GROUP BY s.plan_type"
+JOI_05,joins,How many customers have never triggered any product event?,False,pass,✅ returned 1 rows (non-empty check),"SELECT COUNT(DISTINCT c.customer_id)
+FROM customers c
+LEFT JOIN events e ON c.customer_id = e.customer_id
+WHERE e.customer_id IS NULL"

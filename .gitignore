@@ -1,4 +1,3 @@
 .env
-data/saas.db
 __pycache__/
 *.pyc

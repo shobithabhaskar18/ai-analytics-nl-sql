@@ -3,9 +3,14 @@ import sqlite3
 import pandas as pd
 import json
 import os
+import streamlit as st
 from datetime import datetime
 from dotenv import load_dotenv
 from context_layer import build_prompt
+
+# Works both locally (.env) and on Streamlit Cloud (secrets)
+api_key = os.environ.get("ANTHROPIC_API_KEY") or st.secrets.get("ANTHROPIC_API_KEY")
+client = anthropic.Anthropic(api_key=api_key)
 
 load_dotenv()
 client = anthropic.Anthropic()
